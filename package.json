@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "iMovies – Online Movie Ticket Booking Platform",
   "scripts": {
+    "start": "cd server && node server.js",
+    "build": "cd client && npm install && npm run build",
     "start:server": "cd server && npm start",
     "start:client": "cd client && npm run dev",
     "seed": "cd server && npm run seed",
-    "build:client": "cd client && npm run build"
+    "build:client": "cd client && npm run build",
+    "install:all": "cd server && npm install && cd ../client && npm install"
   },
   "keywords": [
     "movie-booking",

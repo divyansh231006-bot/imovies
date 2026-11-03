@@ -6,15 +6,22 @@ let mongod = null;
 
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/imovies';
+  const isProduction = process.env.NODE_ENV === 'production';
 
   try {
-    // Attempt connecting to the configured URI with a 2-second timeout
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2000
+      serverSelectionTimeoutMS: isProduction ? 10000 : 3000
     });
-    console.log(`[Database] MongoDB connected successfully to: ${uri}`);
+    console.log(`[Database] MongoDB connected successfully.`);
   } catch (err) {
-    console.warn(`[Database] Could not connect to external MongoDB at ${uri}. Launching embedded MongoDB...`);
+    if (isProduction) {
+      // In production, we MUST have a real MongoDB — do not fall back
+      console.error('[Database] FATAL: Could not connect to MongoDB Atlas:', err.message);
+      process.exit(1);
+    }
+
+    // Development fallback: embedded in-memory MongoDB
+    console.warn(`[Database] Could not connect to ${uri}. Launching embedded MongoDB...`);
     try {
       const { MongoMemoryServer } = require('mongodb-memory-server');
       const dbPath = path.join(__dirname, '../data/db');
@@ -31,9 +38,8 @@ const connectDB = async () => {
       });
       const memoryUri = mongod.getUri();
       await mongoose.connect(memoryUri);
-      console.log(`[Database] Embedded persistent MongoDB connected successfully at: ${memoryUri}`);
+      console.log(`[Database] Embedded persistent MongoDB connected at: ${memoryUri}`);
     } catch (memErr) {
-      // If wiredTiger dbPath fails, fall back to pure in-memory
       console.warn('[Database] Retrying with pure in-memory instance...');
       const { MongoMemoryServer } = require('mongodb-memory-server');
       mongod = await MongoMemoryServer.create({
@@ -41,7 +47,7 @@ const connectDB = async () => {
       });
       const memoryUri = mongod.getUri();
       await mongoose.connect(memoryUri);
-      console.log(`[Database] Pure in-memory MongoDB connected successfully at: ${memoryUri}`);
+      console.log(`[Database] Pure in-memory MongoDB connected at: ${memoryUri}`);
     }
   }
 };

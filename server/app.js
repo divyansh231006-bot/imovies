@@ -22,10 +22,14 @@ app.use(
   })
 );
 
-// CORS configuration: allow frontend client on local ports
+// CORS configuration
+const allowedOrigins = process.env.CLIENT_URL
+  ? [process.env.CLIENT_URL, 'http://localhost:5173']
+  : '*';
+
 app.use(
   cors({
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
   })
@@ -60,6 +64,17 @@ app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/seats', seatRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Serve frontend in production — Express serves the React build
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(clientBuildPath));
+
+  // Any route that is NOT an /api route serves the React SPA
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use(notFound);
