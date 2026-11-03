@@ -15,8 +15,11 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-        sync: false
+        value: imovies_super_secret_jwt_key_2026_cinematic
       - key: JWT_EXPIRE
         value: 7d
       - key: CLIENT_URL
-        sync: false
+        fromService:
+          type: web
+          name: imovies-api
+          property: host
